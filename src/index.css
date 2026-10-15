@@ -1,0 +1,226 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #f8fafc;
+    color: #0f172a;
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  h1, h2, h3, h4, p, span, td, th, label {
+    overflow-wrap: break-word;
+  }
+
+  #root {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    text-align: left;
+    border: none;
+    min-height: 100vh;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+}
+
+@layer components {
+  /* ── Tugmalar ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 h-10 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium px-4 h-10 rounded-lg border border-slate-300 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 whitespace-nowrap bg-white hover:bg-red-50 text-red-600 text-sm font-medium px-4 h-10 rounded-lg border border-red-200 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* ── Kartalar ── */
+  .card {
+    @apply bg-white border border-slate-200 rounded-xl p-5 min-w-0;
+  }
+
+  .card-hover {
+    @apply card hover:border-slate-300 transition-colors;
+  }
+
+  .stat-card {
+    @apply bg-white border border-slate-200 rounded-xl p-4 flex flex-col gap-2 min-w-0 h-full hover:border-slate-300 transition-colors;
+  }
+
+  /* ── Formalar ── */
+  .input-field {
+    @apply w-full bg-white border border-slate-300 rounded-lg px-3 h-10 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-colors;
+  }
+
+  textarea.input-field {
+    @apply h-auto py-2;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-slate-700 mb-1.5;
+  }
+
+  /* ── Belgilar (holat) ── */
+  .badge {
+    @apply inline-flex items-center gap-1 whitespace-nowrap px-2 py-0.5 rounded-md text-xs font-medium;
+  }
+
+  .badge-green  { @apply badge bg-emerald-50 text-emerald-700; }
+  .badge-red    { @apply badge bg-red-50 text-red-700; }
+  .badge-yellow { @apply badge bg-amber-50 text-amber-700; }
+  .badge-blue   { @apply badge bg-blue-50 text-blue-700; }
+  .badge-purple { @apply badge bg-violet-50 text-violet-700; }
+  .badge-gray   { @apply badge bg-slate-100 text-slate-600; }
+
+  /* ── Jadvallar ── */
+  .table-container {
+    @apply overflow-x-auto rounded-xl border border-slate-200 bg-white;
+  }
+
+  .table-head {
+    @apply bg-slate-50 text-xs font-medium text-slate-500 px-4 py-3 text-left whitespace-nowrap border-b border-slate-200;
+  }
+
+  .table-cell {
+    @apply px-4 py-3 text-sm text-slate-700 border-t border-slate-100 whitespace-nowrap align-middle;
+  }
+
+  .table-row {
+    @apply hover:bg-slate-50 transition-colors;
+  }
+
+  /* ── Yon menyu ── */
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors;
+  }
+
+  .sidebar-link-active {
+    @apply flex items-center gap-3 px-3 h-10 rounded-lg text-sm font-medium bg-emerald-50 text-emerald-700;
+  }
+
+  /* ── Oyna (modal) ── */
+  .modal-overlay {
+    @apply fixed inset-0 bg-slate-900/40 z-50 overflow-y-auto p-3 sm:p-6 flex items-start sm:items-center justify-center;
+  }
+
+  .modal-content {
+    @apply bg-white border border-slate-200 rounded-xl w-full max-w-lg shadow-xl my-auto;
+  }
+
+  /* ── Matn ── */
+  .page-title {
+    @apply text-xl font-semibold text-slate-900;
+  }
+
+  .page-subtitle {
+    @apply text-sm text-slate-500 mt-1;
+  }
+
+  .section-title {
+    @apply text-base font-semibold text-slate-900 flex items-center gap-2;
+  }
+
+  .divider {
+    @apply border-t border-slate-200 my-4;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-emerald-600 to-green-600 bg-clip-text text-transparent;
+  }
+
+  .glow-green {
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.4); opacity: 0.7; }
+}
+
+.live-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #printable-receipt, #printable-receipt * {
+    visibility: visible;
+  }
+  #printable-receipt {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: white !important;
+  }
+  .print-scroll-container {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
