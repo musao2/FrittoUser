@@ -3,15 +3,20 @@ import { useNavigate } from 'react-router-dom'
 import jsQR from 'jsqr'
 import { LuX, LuCameraOff, LuCircleAlert } from 'react-icons/lu'
 
-// QR ichidagi matndan tokenni ajratib olish: ".../scan?t=TOKEN" yoki tokenning o'zi
-function extractToken(text) {
+// QR ichidagi havoladan kodni ajratib olish: ".../scan?b=KOD" (qog'ozdagi filial QR) yoki ".../scan?t=KOD" (ekran)
+function extractQuery(text) {
   try {
     const url = new URL(text)
-    if (url.pathname.endsWith('/scan')) return url.searchParams.get('t')
+    if (url.pathname.endsWith('/scan')) {
+      const b = url.searchParams.get('b')
+      const t = url.searchParams.get('t')
+      if (b) return `?b=${b}`
+      if (t) return `?t=${t}`
+    }
   } catch {
     // URL emas
   }
-  return /^[0-9a-f]{64}$/.test(text) ? text : null
+  return /^[0-9a-f]{64}$/.test(text) ? `?t=${text}` : null
 }
 
 export default function ScannerPage() {
@@ -49,11 +54,11 @@ export default function ScannerPage() {
         ctx.drawImage(video, 0, 0, w, h)
         const code = jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' })
         if (code?.data) {
-          const token = extractToken(code.data)
-          if (token) {
+          const query = extractQuery(code.data)
+          if (query) {
             stop()
             if (navigator.vibrate) navigator.vibrate(80)
-            navigate(`/scan?t=${token}`, { replace: true })
+            navigate(`/scan${query}`, { replace: true })
             return
           }
           setWrongCode(true)
@@ -139,7 +144,7 @@ export default function ScannerPage() {
       {!error && (
         <div className="px-6 py-6 text-center flex-shrink-0">
           <p className={`text-base ${wrongCode ? 'text-amber-300' : 'text-white'}`}>
-            {wrongCode ? "Bu FRITTO davomat QR kodi emas" : 'Ish joyidagi ekrandagi QR kodni ramka ichiga joylashtiring'}
+            {wrongCode ? "Bu FRITTO davomat QR kodi emas" : 'Filialdagi QR kodni ramka ichiga joylashtiring'}
           </p>
         </div>
       )}

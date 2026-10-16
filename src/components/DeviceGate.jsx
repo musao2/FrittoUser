@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { LuSmartphone, LuShieldCheck, LuCircleX, LuLogOut, LuRefreshCw } from 'react-icons/lu'
+import { LuSmartphone, LuShieldCheck, LuCircleX, LuLogOut, LuRefreshCw, LuSend } from 'react-icons/lu'
 import { supabase } from '../lib/supabase'
 import { getDeviceId, getDeviceLabel } from '../lib/device'
 import { useAuth } from '../context/AuthContext'
@@ -13,6 +13,10 @@ const POLL_MS = 5000
 export default function DeviceGate({ children }) {
   const { signOut } = useAuth()
   const [status, setStatus] = useState('loading') // loading | approved | pending | rejected | setup | error
+  const [sending, setSending] = useState(false)
+  const [waitUntil, setWaitUntil] = useState(0)   // qayta so'rov uchun kutish (vaqt belgisi)
+  const [now, setNow] = useState(Date.now())
+  const [notice, setNotice] = useState('')
   const label = getDeviceLabel()
 
   const check = useCallback(async () => {
@@ -34,12 +38,46 @@ export default function DeviceGate({ children }) {
   }, [check])
 
   // Kutayotgan bo'lsa — har 5 soniyada (admin tasdiqlashi bilan o'zi ochiladi).
+  // Rad etilgan bo'lsa — har 15 soniyada (admin keyinroq ruxsat bersa, o'zi ochiladi).
   // Tasdiqlangan bo'lsa — har daqiqada (admin ruxsatni olib qo'ysa, darhol yopiladi).
   useEffect(() => {
-    if (status !== 'pending' && status !== 'approved') return
-    const id = setInterval(check, status === 'pending' ? POLL_MS : 60000)
+    if (!['pending', 'rejected', 'approved'].includes(status)) return
+    const ms = status === 'pending' ? POLL_MS : status === 'rejected' ? 15000 : 60000
+    const id = setInterval(check, ms)
     return () => clearInterval(id)
   }, [status, check])
+
+  // Qayta so'rov uchun teskari sanoq
+  useEffect(() => {
+    if (waitUntil <= Date.now()) return
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [waitUntil])
+  const secondsLeft = Math.max(0, Math.ceil((waitUntil - now) / 1000))
+
+  // Admin rad etgan qurilma uchun qayta so'rov
+  const requestAgain = async () => {
+    setSending(true)
+    setNotice('')
+    const { data, error } = await supabase.rpc('device_request_again', {
+      p_device_id: getDeviceId(),
+      p_label: label,
+    })
+    setSending(false)
+    if (error) {
+      const m = error.message?.match(/TOO_SOON:(\d+)/)
+      if (m) {
+        setWaitUntil(Date.now() + Number(m[1]) * 1000)
+        setNow(Date.now())
+      } else if (error.code === 'PGRST202' || error.message?.includes('Could not find the function')) {
+        setNotice("Qayta so'rov hali yoqilmagan (009_device_rerequest.sql). Administratorga murojaat qiling.")
+      } else {
+        setNotice("So'rov yuborilmadi. Internetni tekshirib, qayta urinib ko'ring.")
+      }
+      return
+    }
+    setStatus(data)
+  }
 
   // 'setup' — bazada 005_device_approval.sql hali ishga tushirilmagan:
   // xodimlar ishsiz qolmasligi uchun tekshiruvsiz kiritamiz (SQL ishga tushgach o'zi yoqiladi)
@@ -65,7 +103,7 @@ export default function DeviceGate({ children }) {
       icon: <LuCircleX size={36} />,
       tone: 'bg-red-50 text-red-600',
       title: 'Kirish rad etildi',
-      text: "Admin bu qurilmadan kirishga ruxsat bermadi. Agar bu xato bo'lsa, administratorga murojaat qiling.",
+      text: "Admin bu qurilmadan kirishga ruxsat bermadi. Agar bu xato bo'lsa, adminga qayta so'rov yuboring.",
     },
     setup: {
       icon: <LuShieldCheck size={36} />,
@@ -100,7 +138,24 @@ export default function DeviceGate({ children }) {
         </p>
       )}
 
+      {notice && <p className="text-sm text-red-600 mt-4">{notice}</p>}
+
       <div className="mt-8 space-y-2">
+        {status === 'rejected' && (
+          <button
+            id="device-request-again"
+            onClick={requestAgain}
+            disabled={sending || secondsLeft > 0}
+            className="btn-primary w-full"
+          >
+            {sending
+              ? <div className="w-4 h-4 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
+              : <LuSend size={16} />}
+            {secondsLeft > 0
+              ? `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, '0')} dan keyin qayta yuborish mumkin`
+              : "Qayta so'rov yuborish"}
+          </button>
+        )}
         {status === 'error' && (
           <button onClick={check} className="btn-primary w-full">Qayta urinish</button>
         )}

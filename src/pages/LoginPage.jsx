@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { FrittoLogo } from '../components/Logo'
 import { LuEye, LuEyeOff, LuLock, LuMail, LuCircleAlert } from 'react-icons/lu'
 
 export default function LoginPage() {
@@ -35,11 +36,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-emerald-600 rounded-xl mb-3">
-            <span className="text-xl font-bold text-white">F</span>
-          </div>
-          <h1 className="text-xl font-semibold text-slate-900">FRITTO</h1>
-          <p className="text-sm text-slate-500 mt-1">Xodim kabineti</p>
+          <FrittoLogo className="h-24 w-auto mx-auto text-[#111111]" />
+          <p className="text-sm text-slate-500 mt-4">Xodim kabineti</p>
         </div>
 
         <div className="bg-white border border-slate-200 rounded-xl p-6">
@@ -103,7 +101,7 @@ export default function LoginPage() {
             >
               {submitting ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
                   Kirilmoqda...
                 </>
               ) : 'Kirish'}

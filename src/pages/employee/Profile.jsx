@@ -60,7 +60,7 @@ function getScheduleInfo(schedule) {
       title: 'Standart haftalik grafik (5/2)',
       badge: 'Standart 5/2 (09:00 — 18:00)',
       desc: 'Dushanbadan Jumagacha 9 soatlik ish kuni',
-      tagColor: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+      tagColor: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30',
     }
   }
   return {
@@ -152,7 +152,7 @@ export default function EmployeeProfile() {
         />
         {employee?.confirmed_at && (
           <InfoItem
-            icon={<LuCircleCheck size={14} className="text-emerald-400" />}
+            icon={<LuCircleCheck size={14} className="text-emerald-700" />}
             label="Tasdiqlangan sana"
             value={formatTashkentDate(employee.confirmed_at)}
           />
@@ -191,7 +191,7 @@ export default function EmployeeProfile() {
                   </div>
                   <div className="text-right">
                     <p className="text-xs text-dark-500 mb-0.5">Kunlik ish vaqti</p>
-                    <p className="text-base font-bold text-emerald-400">
+                    <p className="text-base font-bold text-emerald-700">
                       {calculateShiftHours(s.shift_start, s.shift_end)} soat
                     </p>
                   </div>
@@ -213,7 +213,7 @@ export default function EmployeeProfile() {
                     key={day.key}
                     className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border text-center transition-all relative ${
                       isWork
-                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-700'
                         : 'bg-white border-slate-200 text-slate-400'
                     } ${isToday ? 'ring-2 ring-cyan-400' : ''}`}
                   >
@@ -223,7 +223,7 @@ export default function EmployeeProfile() {
                       </span>
                     )}
                     <span className="text-xs font-bold">{day.short}</span>
-                    <span className={`text-xs mt-0.5 font-medium ${isWork ? 'text-emerald-400' : 'text-dark-500'}`}>
+                    <span className={`text-xs mt-0.5 font-medium ${isWork ? 'text-emerald-700' : 'text-dark-500'}`}>
                       {isWork ? (match.shift_start ? match.shift_start.slice(0, 5) : 'Ish') : 'Dam'}
                     </span>
                   </div>
@@ -252,7 +252,7 @@ export default function EmployeeProfile() {
             <div className="bg-slate-50 border border-slate-100 rounded-xl p-2.5 col-span-2">
               <p className="text-dark-600 mb-0.5">Holat</p>
               <p className={`font-medium flex items-center gap-1.5 ${
-                trial.status === 'confirmed' ? 'text-emerald-400' :
+                trial.status === 'confirmed' ? 'text-emerald-700' :
                 trial.status === 'rejected'  ? 'text-red-400' :
                 trial.status === 'in_progress' ? 'text-amber-400' : 'text-dark-300'
               }`}>
@@ -295,8 +295,8 @@ export default function EmployeeProfile() {
 
             {sent ? (
               <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
-                <LuCircleCheck size={16} className="text-emerald-400" />
-                <p className="text-emerald-400 text-sm">Xabar muvaffaqiyatli yuborildi!</p>
+                <LuCircleCheck size={16} className="text-emerald-700" />
+                <p className="text-emerald-700 text-sm">Xabar muvaffaqiyatli yuborildi!</p>
               </div>
             ) : (
               <>
@@ -317,7 +317,7 @@ export default function EmployeeProfile() {
                     className="btn-primary flex-1 justify-center disabled:opacity-50"
                   >
                     {sending ? (
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
                     ) : <LuSend size={14} />}
                     Yuborish
                   </button>

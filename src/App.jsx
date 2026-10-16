@@ -20,9 +20,12 @@ const readPending = () => {
 // Tizimga kirmagan xodim QR ni skanerlasa: tokenni eslab qolib, kirish sahifasiga yuboramiz
 function RememberQrThenLogin() {
   const [params] = useSearchParams()
+  // Ekrandagi (?t=) yoki qog'ozdagi filial (?b=) QR — kirgandan keyin davom ettirish uchun eslab qolamiz
   const t = params.get('t')
-  if (t) {
-    try { sessionStorage.setItem(PENDING_QR_KEY, t) } catch { /* ahamiyatsiz */ }
+  const b = params.get('b')
+  const query = b ? `?b=${b}` : t ? `?t=${t}` : null
+  if (query) {
+    try { sessionStorage.setItem(PENDING_QR_KEY, query) } catch { /* ahamiyatsiz */ }
   }
   return <Navigate to="/login" replace />
 }
@@ -69,7 +72,7 @@ function AppRoutes() {
         <Route path="scan"    element={<ScanPage />} />
         <Route path="scanner" element={<ScannerPage />} />
       </Route>
-      <Route path="*" element={<Navigate to={pending ? `/scan?t=${pending}` : '/'} replace />} />
+      <Route path="*" element={<Navigate to={pending ? `/scan${pending.startsWith('?') ? pending : `?t=${pending}`}` : '/'} replace />} />
     </Routes>
     </DeviceGate>
   )

@@ -1,5 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { LogoMark } from '../components/Logo'
 import {
   LuHouse,
   LuClock,
@@ -28,9 +29,7 @@ export default function EmployeeLayout() {
     <div className="min-h-screen bg-slate-50 flex flex-col max-w-lg mx-auto sm:border-x sm:border-slate-200">
       <header className="h-14 bg-white border-b border-slate-200 px-4 flex items-center justify-between gap-3 sticky top-0 z-40">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center flex-shrink-0">
-            <span className="text-sm font-bold text-white">F</span>
-          </div>
+          <LogoMark size={32} />
           <div className="min-w-0 leading-tight">
             <p className="text-sm font-semibold text-slate-900 truncate">
               {profile?.full_name || profile?.email}

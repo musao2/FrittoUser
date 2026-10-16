@@ -207,7 +207,7 @@ export default function EmployeeDashboard() {
           <p className="text-xs text-dark-600">{employee.position}</p>
           <p className="text-xs text-dark-600">{employee.branch}</p>
           {currentRate && (
-            <p className="text-xs text-emerald-400 mt-0.5">{formatMoney(currentRate.hourly_rate)}/soat</p>
+            <p className="text-xs text-emerald-700 mt-0.5">{formatMoney(currentRate.hourly_rate)}/soat</p>
           )}
         </div>
       </div>
@@ -217,7 +217,7 @@ export default function EmployeeDashboard() {
         <div className={`rounded-xl px-4 py-3 text-sm animate-fade-in flex items-start gap-2 ${
           message.type === 'error'
             ? 'bg-red-500/10 border border-red-500/20 text-red-400'
-            : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'
+            : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-700'
         }`}>
           {message.type === 'error' ? <LuCircleAlert size={16} className="mt-0.5 flex-shrink-0" /> : <LuCircleCheck size={16} className="mt-0.5 flex-shrink-0" />}
           <span>{message.text}</span>
@@ -242,13 +242,13 @@ export default function EmployeeDashboard() {
                 <LuClock size={15} className="text-cyan-400" />
                 <span className="text-xs font-bold text-slate-900">
                   {isTodayWorkDay
-                    ? <span className="inline-flex items-center gap-1">Bugun ish kuni <LuBriefcase size={13} className="text-emerald-600" /></span>
+                    ? <span className="inline-flex items-center gap-1">Bugun ish kuni <LuBriefcase size={13} className="text-emerald-700" /></span>
                     : <span className="inline-flex items-center gap-1">Bugun dam olish kuni <LuCoffee size={13} className="text-amber-600" /></span>}
                 </span>
               </div>
               <span className={`text-xs px-2 py-0.5 rounded-full font-bold border ${
                 isTodayWorkDay
-                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                  ? 'bg-emerald-500/15 text-emerald-700 border-emerald-500/30'
                   : 'bg-dark-700 text-dark-400 border-dark-600'
               }`}>
                 {isTodayWorkDay ? `${activeSchedule.shift_start} — ${activeSchedule.shift_end}` : badgeText}
@@ -274,12 +274,12 @@ export default function EmployeeDashboard() {
                     key={day.key}
                     className={`flex flex-col items-center justify-center py-1.5 rounded-lg border text-center transition-all ${
                       isWork
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700'
                         : 'bg-dark-900/40 border-dark-700/30 text-dark-600'
                     } ${isToday ? 'ring-1.5 ring-cyan-400 font-bold' : ''}`}
                   >
                     <span className="text-xs">{day.short}</span>
-                    <span className={`text-xs mt-0.5 ${isWork ? 'text-emerald-400 font-semibold' : 'text-dark-500'}`}>
+                    <span className={`text-xs mt-0.5 ${isWork ? 'text-emerald-700 font-semibold' : 'text-dark-500'}`}>
                       {isWork ? 'Ish' : 'Dam'}
                     </span>
                   </div>
@@ -300,7 +300,7 @@ export default function EmployeeDashboard() {
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
               <span className="live-dot w-2 h-2 bg-emerald-500 rounded-full" />
-              <span className="text-emerald-400 text-sm font-medium">Ish vaqti davom etmoqda</span>
+              <span className="text-emerald-700 text-sm font-medium">Ish vaqti davom etmoqda</span>
             </div>
             <p className="text-4xl font-mono font-semibold text-emerald-800 mb-1">
               {new Date(liveSeconds * 1000).toISOString().substr(11, 8)}
@@ -309,7 +309,7 @@ export default function EmployeeDashboard() {
               Boshlangan: {formatTashkentTime(openSession.check_in_at)}
             </p>
             {currentRate && (
-              <p className="text-xs text-emerald-400">
+              <p className="text-xs text-emerald-700">
                 ≈ {formatMoney((liveSeconds / 3600) * currentRate.hourly_rate)} hisoblandi
               </p>
             )}
@@ -327,13 +327,13 @@ export default function EmployeeDashboard() {
       <Link
         to="/scanner"
         id="employee-scan-btn"
-        className="flex items-center justify-center gap-3 w-full h-16 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-base font-semibold transition-colors"
+        className="flex items-center justify-center gap-3 w-full h-16 rounded-xl bg-emerald-600 hover:bg-emerald-400 active:bg-emerald-500 text-slate-950 text-base font-semibold transition-colors"
       >
         <LuScanLine size={24} />
         {openSession ? 'Ketdim — QR skanerlash' : 'Keldim — QR skanerlash'}
       </Link>
       <p className="text-xs text-slate-500 text-center -mt-2">
-        Ish joyidagi ekrandagi QR kodni skanerlang
+        Filialdagi QR kodni skanerlang — joylashuv (GPS) yoqilgan bo'lsin
       </p>
 
       {/* Trial status */}
@@ -366,7 +366,7 @@ export default function EmployeeDashboard() {
       <div className="card bg-white border-slate-200 p-4 space-y-3.5">
         <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
           <div className="flex items-center gap-2">
-            <LuDollarSign size={16} className="text-emerald-400" />
+            <LuDollarSign size={16} className="text-emerald-700" />
             <h2 className="section-title">Bu oylik hisob-kitob va balans</h2>
           </div>
           <span className="text-xs text-dark-500">
@@ -382,7 +382,7 @@ export default function EmployeeDashboard() {
           </div>
           <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
             <p className="text-xs text-dark-400">Hisoblangan ish haqi</p>
-            <p className="text-sm font-bold text-emerald-400 mt-0.5">+{formatMoney(monthStats.earned)}</p>
+            <p className="text-sm font-bold text-emerald-700 mt-0.5">+{formatMoney(monthStats.earned)}</p>
           </div>
           <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
             <p className="text-xs text-dark-400 flex items-center gap-1">
@@ -423,7 +423,7 @@ export default function EmployeeDashboard() {
           <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-xs">
           <div className="flex justify-between items-center text-dark-300">
             <span>Umumiy ishlab topildi:</span>
-            <span className="font-medium text-emerald-400">+{formatMoney(monthStats.earned)}</span>
+            <span className="font-medium text-emerald-700">+{formatMoney(monthStats.earned)}</span>
           </div>
           <div className="flex justify-between items-center text-dark-300">
             <span className="text-purple-400">Ushlab qolingan avans:</span>
@@ -431,15 +431,15 @@ export default function EmployeeDashboard() {
           </div>
           {totalPaid > 0 && (
             <div className="flex justify-between items-center text-dark-300">
-              <span className="text-emerald-400 font-medium">To'langan oylik (Kassadan):</span>
-              <span className="font-bold text-emerald-400">-{formatMoney(totalPaid)}</span>
+              <span className="text-emerald-700 font-medium">To'langan oylik (Kassadan):</span>
+              <span className="font-bold text-emerald-700">-{formatMoney(totalPaid)}</span>
             </div>
           )}
           <div className="pt-1.5 border-t border-dark-800 flex justify-between items-center font-semibold">
             <span className="text-dark-200">
               {totalPaid > 0 && remainingPayable === 0 ? "Holat:" : "Sof qoldiq (To'lanadigan):"}
             </span>
-            <span className={totalPaid > 0 && remainingPayable === 0 ? 'text-emerald-400 font-bold' : netBalance >= 0 ? 'text-amber-400' : 'text-red-400'}>
+            <span className={totalPaid > 0 && remainingPayable === 0 ? 'text-emerald-700 font-bold' : netBalance >= 0 ? 'text-amber-400' : 'text-red-400'}>
               {totalPaid > 0 && remainingPayable === 0
                 ? <span className="inline-flex items-center gap-1">0 so'm (to'liq to'langan) <LuCircleCheck size={14} /></span>
                 : formatMoney(remainingPayable)
@@ -501,7 +501,7 @@ export default function EmployeeDashboard() {
             <LuClock size={14} className="text-cyan-400" />
             Oxirgi smenalar
           </h2>
-          <Link to="/history" className="text-xs text-emerald-400 flex items-center gap-1 hover:text-emerald-300">
+          <Link to="/history" className="text-xs text-emerald-700 flex items-center gap-1 hover:text-emerald-300">
             Barchasi <LuChevronRight size={12} />
           </Link>
         </div>
@@ -531,7 +531,7 @@ export default function EmployeeDashboard() {
                     ) : (
                       <>
                         <p className="text-xs font-medium text-dark-300">{formatDuration(sess.worked_seconds)}</p>
-                        <p className="text-xs text-emerald-400 font-medium">{formatMoney(sess.earned_amount)}</p>
+                        <p className="text-xs text-emerald-700 font-medium">{formatMoney(sess.earned_amount)}</p>
                       </>
                     )}
                   </div>

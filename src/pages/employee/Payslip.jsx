@@ -115,7 +115,7 @@ export default function EmployeePayslip() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="page-title flex items-center gap-2">
-            <LuReceipt size={20} className="text-emerald-600" />
+            <LuReceipt size={20} className="text-emerald-700" />
             Oylik hisob-kitob va chek
           </h1>
           <p className="page-subtitle">
@@ -168,7 +168,7 @@ export default function EmployeePayslip() {
             {/* Header */}
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white font-semibold text-lg flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-slate-950 font-semibold text-lg flex items-center justify-center">
                   F
                 </div>
                 <div>
@@ -254,7 +254,7 @@ export default function EmployeePayslip() {
                 <div className="bg-emerald-50/70 rounded-xl p-2.5 border border-emerald-200 space-y-1">
                   <div className="flex justify-between items-center text-emerald-800 font-bold">
                     <span className="flex items-center gap-1">
-                      <LuSparkles size={13} className="text-emerald-600" />
+                      <LuSparkles size={13} className="text-emerald-700" />
                       Bonuslar:
                     </span>
                     <span>+{formatMoney(payrollItem.total_bonuses)}</span>
