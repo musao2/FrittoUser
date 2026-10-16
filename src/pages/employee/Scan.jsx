@@ -1,15 +1,21 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { LuLogIn, LuLogOut, LuCircleAlert, LuClock, LuMapPin, LuRefreshCw, LuMapPinOff } from 'react-icons/lu'
+import { LuLogIn, LuLogOut, LuCircleAlert, LuClock, LuMapPin, LuRefreshCw, LuMapPinOff, LuCamera } from 'react-icons/lu'
 import { supabase, formatDuration, formatMoney } from '../../lib/supabase'
 import { getDeviceId } from '../../lib/device'
+import { useAuth } from '../../context/AuthContext'
+import SelfieCapture from '../../components/SelfieCapture'
 
 // Tizimga kirmasdan skanerlansa — QR shu yerda eslab qolinadi (masalan "?b=..." yoki "?t=...")
 export const PENDING_QR_KEY = 'fritto_pending_qr'
 
 const ERRORS = {
-  QR_EXPIRED:          { title: 'QR kod eskirgan',            text: "Ekrandagi QR kod har 15 soniyada yangilanadi. Ekran oldida turib qayta skanerlang." },
+  QR_EXPIRED:          { title: 'QR kod eskirgan',            text: "Ekrandagi QR kod tez yangilanadi. Ekran oldida turib qayta skanerlang." },
   QR_INVALID:          { title: 'QR kod yaroqsiz',            text: "Bu QR kod yangilangan yoki filial o'chirilgan. Administratorga murojaat qiling." },
+  PHOTO_REQUIRED:      { title: 'Rasm kerak', selfie: true,
+                         text: "Davomat uchun yuzingiz rasmga olinishi shart. Qayta rasmga oling." },
+  PHOTO_UPLOAD:        { title: 'Rasm yuklanmadi', selfie: true,
+                         text: "Internet aloqasini tekshirib, qayta rasmga oling." },
   TOO_SOON:            { title: 'Hozirgina skanerladingiz',   text: "Bir daqiqadan keyin qayta urinib ko'ring." },
   NOT_EMPLOYEE:        { title: 'Xodim topilmadi',            text: "Bu hisob xodimga bog'lanmagan. Administratorga murojaat qiling." },
   DEVICE_NOT_APPROVED: { title: 'Qurilma tasdiqlanmagan',     text: "Bu telefondan davomat qilish uchun admin ruxsat berishi kerak." },
@@ -55,58 +61,114 @@ function getBestPosition({ maxWaitMs = 10000, goodEnoughM = 20 } = {}) {
 }
 
 export default function ScanPage() {
+  const { user } = useAuth()
   const [params] = useSearchParams()
   const token  = params.get('t') // ekrandagi (kiosk) QR
   const branch = params.get('b') // qog'ozdagi filial QR
-  const [state, setState] = useState({ status: 'loading', step: 'check' })
-  const started = useRef(false) // StrictMode'da ikki marta yuborilmasligi uchun
+  const [state, setState] = useState(
+    token || branch ? { status: 'selfie' } : { status: 'error', code: 'QR_INVALID' }
+  )
+  const posRef = useRef(null)    // joylashuv (selfi olinayotganda parallel aniqlanadi)
+  const photoRef = useRef(null)  // yuklangan rasm yo'li — qayta urinishda qayta ishlatiladi
+  const started = useRef(false)
 
-  const run = useCallback(async () => {
-    if (!token && !branch) {
-      setState({ status: 'error', code: 'QR_INVALID' })
-      return
-    }
-
-    let rpc
-    if (branch) {
-      setState({ status: 'loading', step: 'location' })
-      let pos
-      try {
-        pos = await getBestPosition()
-      } catch (e) {
-        setState({ status: 'error', code: e.code || 'LOCATION_UNAVAILABLE' })
-        return
-      }
-      setState({ status: 'loading', step: 'check' })
-      rpc = supabase.rpc('branch_check_in_out', {
-        p_code: branch,
-        p_device_id: getDeviceId(),
-        p_lat: pos.coords.latitude,
-        p_lng: pos.coords.longitude,
-        p_accuracy: pos.coords.accuracy,
-      })
-    } else {
-      rpc = supabase.rpc('qr_check_in_out', { p_token: token, p_device_id: getDeviceId() })
-    }
-
-    const { data, error } = await rpc
-    if (error) {
-      const msg = error.message || ''
-      const code = Object.keys(ERRORS).find(c => msg.includes(c))
-      // "TOO_FAR:85:50" yoki "LOW_ACCURACY:120" — raqamlarni ajratib olamiz
-      const args = msg.split(':').slice(1).map(Number).filter(n => Number.isFinite(n))
-      setState({ status: 'error', code, args, message: msg })
-    } else {
-      setState({ status: 'done', result: data })
-    }
-  }, [token, branch])
+  // Qog'ozdagi QR bo'lsa — joylashuvni darhol aniqlay boshlaymiz
+  const startLocating = useCallback(() => {
+    posRef.current = getBestPosition()
+    posRef.current.catch(() => {}) // xatoni keyin, kerak bo'lganda ko'rsatamiz
+  }, [])
 
   useEffect(() => {
     if (started.current) return
     started.current = true
     try { sessionStorage.removeItem(PENDING_QR_KEY) } catch { /* ahamiyatsiz */ }
-    run()
-  }, [run])
+    if (branch) startLocating()
+  }, [branch, startLocating])
+
+  const fail = (msg) => {
+    const code = Object.keys(ERRORS).find(c => (msg || '').includes(c))
+    // "TOO_FAR:85:50" yoki "LOW_ACCURACY:120" — raqamlarni ajratib olamiz
+    const args = (msg || '').split(':').slice(1).map(Number).filter(n => Number.isFinite(n))
+    setState({ status: 'error', code, args, message: msg })
+  }
+
+  // Rasm yuklangandan keyin — serverga yuborish
+  const submit = useCallback(async () => {
+    const photoPath = photoRef.current
+    let call, legacy
+    if (branch) {
+      setState({ status: 'loading', step: 'location' })
+      let pos
+      try {
+        pos = await (posRef.current || getBestPosition())
+      } catch (e) {
+        posRef.current = null
+        fail(e.code || 'LOCATION_UNAVAILABLE')
+        return
+      }
+      posRef.current = null
+      setState({ status: 'loading', step: 'check' })
+      const args = {
+        p_code: branch, p_device_id: getDeviceId(),
+        p_lat: pos.coords.latitude, p_lng: pos.coords.longitude, p_accuracy: pos.coords.accuracy,
+      }
+      call = () => supabase.rpc('branch_check_in_out', { ...args, p_photo_path: photoPath })
+      legacy = () => supabase.rpc('branch_check_in_out', args)
+    } else {
+      setState({ status: 'loading', step: 'check' })
+      const args = { p_token: token, p_device_id: getDeviceId() }
+      call = () => supabase.rpc('qr_check_in_out', { ...args, p_photo_path: photoPath })
+      legacy = () => supabase.rpc('qr_check_in_out', args)
+    }
+
+    let { data, error } = await call()
+    // Bazada 010_attendance_selfie.sql hali ishga tushirilmagan bo'lsa — eski funksiya
+    if (error && (error.code === 'PGRST202' || error.message?.includes('Could not find the function'))) {
+      ({ data, error } = await legacy())
+    }
+    if (error) fail(error.message || '')
+    else setState({ status: 'done', result: data })
+  }, [token, branch])
+
+  // Selfi olindi — rasmni yuklaymiz
+  const onCaptured = async (blob) => {
+    setState({ status: 'loading', step: 'upload' })
+    const day = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tashkent' })
+    const path = `${user.id}/${day}/${Date.now()}.jpg`
+    const { error } = await supabase.storage.from('attendance-photos').upload(path, blob, {
+      contentType: 'image/jpeg',
+      upsert: false,
+    })
+    if (error) {
+      fail('PHOTO_UPLOAD')
+      return
+    }
+    photoRef.current = path
+    submit()
+  }
+
+  const retry = () => {
+    const err = ERRORS[state.code]
+    if (err?.selfie || !photoRef.current) {
+      photoRef.current = null
+      if (branch && !posRef.current) startLocating()
+      setState({ status: 'selfie' })
+    } else {
+      // Rasm allaqachon bor — faqat joylashuv/tekshiruvni qaytaramiz
+      if (branch) startLocating()
+      submit()
+    }
+  }
+
+  if (state.status === 'selfie') {
+    return (
+      <SelfieCapture
+        title={branch ? 'Davomat: yuzingizni rasmga oling' : 'Yuzingizni rasmga oling'}
+        onCaptured={onCaptured}
+        onCancel={() => window.history.length > 1 ? window.history.back() : window.location.assign('/')}
+      />
+    )
+  }
 
   const err = state.status === 'error' ? (ERRORS[state.code] || null) : null
   const errText = err ? (typeof err.text === 'function' ? err.text(...(state.args || [])) : err.text) : state.message
@@ -116,7 +178,11 @@ export default function ScanPage() {
       <div className="w-full text-center">
         {state.status === 'loading' && (
           <>
-            {state.step === 'location' ? (
+            {state.step === 'upload' ? (
+              <div className="w-20 h-20 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto mb-5 animate-pulse">
+                <LuCamera size={36} />
+              </div>
+            ) : state.step === 'location' ? (
               <div className="w-20 h-20 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto mb-5 animate-pulse">
                 <LuMapPin size={36} />
               </div>
@@ -124,7 +190,7 @@ export default function ScanPage() {
               <div className="w-12 h-12 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
             )}
             <p className="text-base text-slate-900 font-medium">
-              {state.step === 'location' ? 'Joylashuvingiz aniqlanmoqda...' : 'Tekshirilmoqda...'}
+              {state.step === 'upload' ? 'Rasm yuklanmoqda...' : state.step === 'location' ? 'Joylashuvingiz aniqlanmoqda...' : 'Tekshirilmoqda...'}
             </p>
             {state.step === 'location' && (
               <p className="text-sm text-slate-500 mt-1">Telefon joylashuvga ruxsat so'rasa — «Ruxsat berish»ni bosing</p>
@@ -184,12 +250,10 @@ export default function ScanPage() {
               </div>
             )}
 
-            {err?.retry && (
-              <button
-                onClick={() => { setState({ status: 'loading', step: 'check' }); run() }}
-                className="btn-primary w-full mt-6"
-              >
-                <LuRefreshCw size={16} /> Qayta urinish
+            {(err?.retry || err?.selfie) && (
+              <button onClick={retry} className="btn-primary w-full mt-6">
+                {err?.selfie ? <LuCamera size={16} /> : <LuRefreshCw size={16} />}
+                {err?.selfie ? 'Qayta rasmga olish' : 'Qayta urinish'}
               </button>
             )}
           </>

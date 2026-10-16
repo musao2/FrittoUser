@@ -6,3 +6,4 @@ dist
 .cert
 .claude
 .DS_Store
+public/mediapipe

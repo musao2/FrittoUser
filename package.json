@@ -8,9 +8,14 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "dev:phone": "FRITTO_HTTPS=1 vite"
+    "dev:phone": "FRITTO_HTTPS=1 vite",
+    "copy-mediapipe": "node scripts/copy-mediapipe.mjs",
+    "predev": "npm run copy-mediapipe",
+    "predev:phone": "npm run copy-mediapipe",
+    "prebuild": "npm run copy-mediapipe"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "1.0.1",
     "@supabase/supabase-js": "^2.117.3",
     "date-fns": "^4.4.0",
     "jsqr": "^1.4.0",

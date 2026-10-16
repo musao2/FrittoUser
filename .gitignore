@@ -28,3 +28,6 @@ dist-ssr
 
 # Lokal https sertifikati
 .cert
+
+# MediaPipe dvigateli (build paytida node_modules dan nusxalanadi)
+public/mediapipe
