@@ -4,22 +4,28 @@ import { LuCamera, LuCameraOff, LuX, LuRefreshCw, LuScanFace } from 'react-icons
 // Yuzni aniqlash modeli (Google MediaPipe — BlazeFace, ~230 KB)
 const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite'
 const MIN_SCORE = 0.7        // yuz ekanligiga ishonch (0..1)
-const MIN_FACE_WIDTH = 0.22  // yuz kadr kengligining kamida 22% bo'lsin (yaqin tursin)
+const MIN_FACE_SIZE = 0.25   // yuz kadrning qisqa tomonining kamida 25% bo'lsin (yaqin tursin)
+const DETECT_SIZE = 320      // tahlil uchun kadr shu o'lchamgacha kichraytiriladi (tez va barqaror)
 const STABLE_MS = 700        // yuz shuncha vaqt barqaror ko'rinsa — rasmga olish mumkin
 
 // Detektor bir marta yuklanadi va qayta ishlatiladi
 let detectorPromise = null
+function resetDetector() {
+  detectorPromise?.then(d => d.close?.()).catch(() => {})
+  detectorPromise = null
+}
 async function getDetector() {
   if (!detectorPromise) {
     detectorPromise = (async () => {
       const { FilesetResolver, FaceDetector } = await import('@mediapipe/tasks-vision')
       const vision = await FilesetResolver.forVisionTasks('/mediapipe')
-      const make = (delegate) => FaceDetector.createFromOptions(vision, {
-        baseOptions: { modelAssetPath: MODEL_URL, delegate },
+      // CPU: barcha telefonlarda bir xil ishlaydi. (Android Chrome'da GPU rejimi
+      // "ishga tushadi", lekin yuzni topmaydi — shuning uchun ishlatilmaydi.)
+      return FaceDetector.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: MODEL_URL, delegate: 'CPU' },
         runningMode: 'VIDEO',
         minDetectionConfidence: 0.5,
       })
-      try { return await make('GPU') } catch { return await make('CPU') }
     })().catch((e) => { detectorPromise = null; throw e })
   }
   return detectorPromise
@@ -45,6 +51,7 @@ export default function SelfieCapture({ title = 'Yuzingizni rasmga oling', onCap
   const [hint, setHint] = useState('loading')
   const [ready, setReady] = useState(false)     // yuz barqaror aniqlandi
   const [error, setError] = useState(null)      // 'denied' | 'nocamera' | 'model'
+  const [errorDetail, setErrorDetail] = useState('')
   const [attempt, setAttempt] = useState(0)
   const okSince = useRef(0)
 
@@ -53,6 +60,10 @@ export default function SelfieCapture({ title = 'Yuzingizni rasmga oling', onCap
     let raf = 0
     let stopped = false
     let lastTs = 0
+    let failures = 0
+    let recreated = false
+    const small = document.createElement('canvas')
+    const smallCtx = small.getContext('2d', { willReadFrequently: true })
 
     const stop = () => {
       stopped = true
@@ -73,19 +84,33 @@ export default function SelfieCapture({ title = 'Yuzingizni rasmga oling', onCap
           audio: false,
         })
       } catch (e) {
-        setError(e?.name === 'NotAllowedError' ? 'denied' : 'nocamera')
-        return
+        if (e?.name === 'NotAllowedError') { setError('denied'); return }
+        // Ba'zi Android telefonlar so'ralgan o'lchamni bera olmaydi — oddiy sozlama bilan qayta
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+        } catch (e2) {
+          setError(e2?.name === 'NotAllowedError' ? 'denied' : 'nocamera')
+          setErrorDetail(e2?.name || '')
+          return
+        }
       }
       if (stopped) return stop()
       const video = videoRef.current
       video.srcObject = stream
+      // Android'da video o'lchami ma'lum bo'lguncha kutamiz
+      if (!video.videoWidth) {
+        await new Promise(res => {
+          video.onloadedmetadata = () => res()
+          setTimeout(res, 3000)
+        })
+      }
       await video.play().catch(() => {})
 
       let detector
       try {
         detector = await getDetector()
-      } catch {
-        if (!stopped) setError('model')
+      } catch (e) {
+        if (!stopped) { setError('model'); setErrorDetail(String(e?.message || e).slice(0, 120)) }
         return
       }
       if (stopped) return
@@ -94,12 +119,34 @@ export default function SelfieCapture({ title = 'Yuzingizni rasmga oling', onCap
         if (stopped) return
         const now = performance.now()
         // ~8 marta soniyada tekshiramiz (telefon qizib ketmasin)
-        if (now - lastTs > 120 && video.readyState >= 2) {
+        if (now - lastTs > 120 && video.readyState >= 2 && video.videoWidth) {
           lastTs = now
+          // Kadrni kichik kanvasga chizib tahlil qilamiz (Android'da barqarorroq va tezroq)
+          const k = Math.min(1, DETECT_SIZE / Math.max(video.videoWidth, video.videoHeight))
+          small.width = Math.round(video.videoWidth * k)
+          small.height = Math.round(video.videoHeight * k)
+          smallCtx.drawImage(video, 0, 0, small.width, small.height)
+
           let faces = []
           try {
-            faces = detector.detectForVideo(video, now).detections || []
-          } catch { /* bitta kadr o'tkazib yuboriladi */ }
+            faces = detector.detectForVideo(small, Math.round(now)).detections || []
+            failures = 0
+          } catch (e) {
+            failures++
+            if (failures >= 8) {
+              if (!recreated) {
+                // Detektorni bir marta qayta yaratib ko'ramiz
+                recreated = true
+                failures = 0
+                resetDetector()
+                getDetector().then(d => { detector = d }).catch(() => {})
+              } else {
+                setError('model')
+                setErrorDetail(String(e?.message || e).slice(0, 120))
+                return
+              }
+            }
+          }
 
           let state
           if (faces.length === 0) state = 'noface'
@@ -107,9 +154,10 @@ export default function SelfieCapture({ title = 'Yuzingizni rasmga oling', onCap
           else {
             const f = faces[0]
             const score = f.categories?.[0]?.score ?? 0
-            const width = (f.boundingBox?.width || 0) / (video.videoWidth || 1)
+            // Yotiq yoki tik kadrdan qat'i nazar: yuz kadrning qisqa tomoniga nisbatan
+            const size = (f.boundingBox?.width || 0) / (Math.min(small.width, small.height) || 1)
             if (score < MIN_SCORE) state = 'weak'
-            else if (width < MIN_FACE_WIDTH) state = 'far'
+            else if (size < MIN_FACE_SIZE) state = 'far'
             else state = 'ok'
           }
 
@@ -188,7 +236,11 @@ export default function SelfieCapture({ title = 'Yuzingizni rasmga oling', onCap
                   model: "Internet aloqasini tekshiring va qayta urinib ko'ring.",
                 }[error]}
               </p>
-              <button onClick={() => setAttempt(a => a + 1)} className="btn-primary w-full mt-5">
+              {errorDetail && <p className="text-[11px] text-slate-400 mt-2 break-all">Texnik: {errorDetail}</p>}
+              <button
+                onClick={() => { if (error === 'model') resetDetector(); setErrorDetail(''); setAttempt(a => a + 1) }}
+                className="btn-primary w-full mt-5"
+              >
                 <LuRefreshCw size={16} /> Qayta urinish
               </button>
               {onCancel && <button onClick={onCancel} className="btn-secondary w-full mt-2">Bekor qilish</button>}
